@@ -74,16 +74,16 @@ const Index = () => {
       setScanProgress(Math.min(progress, 100));
     }, 150);
 
+    const rect = e.currentTarget.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
     // Взрыв и результат через 2 секунды
     setTimeout(() => {
       setScanning(false);
       setExploding(true);
       setScanText("ОБНАРУЖЕНО: ВИРУС СТОНАНИЯ v2.0");
       setInfected(true);
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
 
       const newParticles: Particle[] = Array.from({ length: 60 }, (_, i) => {
         const angle = (Math.PI * 2 * i) / 60 + Math.random() * 0.3;
