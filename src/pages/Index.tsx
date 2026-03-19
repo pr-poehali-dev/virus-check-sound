@@ -18,27 +18,44 @@ function playGroanSound() {
   const AudioCtx = (window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)!;
   const ctx = new AudioCtx();
 
-  const playNote = (freq: number, startTime: number, duration: number, type: OscillatorType = "sine") => {
+  // Один длинный стон — голосовой вибрато эффект
+  const makeGroan = (startFreq: number, endFreq: number, startTime: number, duration: number, volume: number) => {
     const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, startTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, startTime + duration);
-    gain.gain.setValueAtTime(0.3, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    const gainNode = ctx.createGain();
+
+    // LFO — дрожание голоса (вибрато)
+    lfo.frequency.value = 5;
+    lfoGain.gain.value = 8;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(startFreq, startTime);
+    osc.frequency.linearRampToValueAtTime(startFreq * 1.3, startTime + duration * 0.3);
+    osc.frequency.linearRampToValueAtTime(endFreq, startTime + duration);
+
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.05);
+    gainNode.gain.setValueAtTime(volume, startTime + duration - 0.3);
+    gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    lfo.start(startTime);
     osc.start(startTime);
+    lfo.stop(startTime + duration);
     osc.stop(startTime + duration);
   };
 
   const now = ctx.currentTime;
-  playNote(400, now, 0.4, "sawtooth");
-  playNote(320, now + 0.1, 0.5, "sine");
-  playNote(280, now + 0.3, 0.6, "triangle");
-  playNote(200, now + 0.5, 0.8, "sawtooth");
-  playNote(150, now + 0.7, 1.0, "sine");
-  playNote(100, now + 0.9, 1.2, "triangle");
+  // Несколько "стонов" подряд
+  makeGroan(220, 160, now, 0.9, 0.5);
+  makeGroan(200, 250, now + 0.8, 0.7, 0.4);
+  makeGroan(240, 120, now + 1.4, 1.2, 0.6);
+  makeGroan(180, 100, now + 2.3, 1.0, 0.5);
 }
 
 const Index = () => {
